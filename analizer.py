@@ -56,12 +56,10 @@ veiculo_arr = [0] * 34
 total_mes = [0] * 12
 # cidade, tipo_veiculo, dia_da_semana, fase_do_dia, data_acidente
 class Acidente:
-    def __init__(self, identificacao_acidente, cidade, tipo_veiculo, dia_da_semana, fase_do_dia, data_acidente):
+    def __init__(self, identificacao_acidente, cidade, tipo_veiculo, data_acidente):
         self.identificacao_acidente = identificacao_acidente
         self.cidade = cidade
         self.tipo_veiculo = tipo_veiculo
-        self.dia_da_semana = dia_da_semana
-        self.fase_do_dia = fase_do_dia
         self.data_acidente = data_acidente
 
 
@@ -104,9 +102,7 @@ def ler_arquivo():
                 identificacao_acidente=dados[0],
                 cidade=dados[1],
                 tipo_veiculo=dados[2],
-                dia_da_semana=dados[3],
-                fase_do_dia=dados[4],
-                data_acidente=dados[5]
+                data_acidente=dados[3]
             )
             tipo_veiculo = acidente.tipo_veiculo.strip()
             
