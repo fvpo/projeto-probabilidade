@@ -2,9 +2,11 @@ import csv
 import matplotlib.pyplot as plt
 import random
 import statistics
+
+
 dict_tipo_veículo = {
     "01": "Automóvel",
-    "02": "Bicicleta/Bicicleta elétrica",
+    "02": "Motocicleta",
     "03": "Bonde",
     "04": "Caminhão",
     "05": "Caminhão-trator",
@@ -16,7 +18,7 @@ dict_tipo_veículo = {
     "11": "Ciclo",
     "12": "Ciclomotor",
     "13": "Micro-ônibus",
-    "14": "Motocicleta",
+    "14": "Bicicleta/Bicicleta elétrica",
     "15": "Motoneta",
     "16": "Motorcasa (Motorhome)",
     "17": "Ônibus",
@@ -130,26 +132,26 @@ def plot_veiculo():
             label = dict_tipo_veículo['99']
         if item != 0:
             veiculo_arr_stringify.append((label, item))
-
+    temp = []
+    for i in veiculo_arr_stringify:
+        temp.append(i[0])
     media = statistics.mean(veiculo_arr)
     desvio_padrao = statistics.pstdev(veiculo_arr)
     
     veiculo_arr_sorted = sorted(veiculo_arr_stringify)
     number_of_incidents = []
-    involved_vehicles = []
     for item in veiculo_arr_sorted:
-        involved_vehicles.append(str(item[0]))
         number_of_incidents.append((item[1]))
     number_of_incidents = sorted(number_of_incidents, reverse=True)
 
-    plt.bar(involved_vehicles, number_of_incidents)
+    plt.bar(temp, number_of_incidents)
     plt.xticks(rotation=90)
     plt.xlabel('Tipo de Veículo')
     plt.ylabel('Número de Acidentes')
     
     plt.axhline(media, color='black', linestyle='-', linewidth=1, label='Média (μ)')
-    plt.axhline(media + (2 * desvio_padrao), color='red', linestyle=':', linewidth=1, label='+2σ')
-    plt.axhline(media + (1 * desvio_padrao), color='green', linestyle='--', linewidth=1, label='+1σ')
+    plt.axhline(media + (2 * desvio_padrao), color='red', linestyle=':', linewidth=1, label='+3σ')
+    plt.axhline(media + (1 * desvio_padrao), color='green', linestyle='--', linewidth=1, label='+2σ')
     
     plt.legend()
     plt.show()
