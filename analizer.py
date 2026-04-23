@@ -2,6 +2,7 @@ import csv
 import matplotlib.pyplot as plt
 import random
 import statistics
+from datetime import date
 
 
 dict_tipo_veículo = {
@@ -55,7 +56,10 @@ dict_mes = {
     "12": "dezembro"
 }
 veiculo_arr = [0] * 34
-total_mes = [0] * 12
+media_mes = []
+total_mes22 = [0] * 12
+total_mes23 = [0] * 12
+total_mes24 = [0] * 12
 # cidade, tipo_veiculo, dia_da_semana, fase_do_dia, data_acidente
 class Acidente:
     def __init__(self, identificacao_acidente, cidade, tipo_veiculo, data_acidente):
@@ -65,28 +69,56 @@ class Acidente:
         self.data_acidente = data_acidente
 
 
-def obter_mes(data_acidente):
+def obter_mes(data_acidente, mes_referencia=None):
     data = data_acidente.strip()
     if not data.isdigit() or data == "000000":
         return None
 
-    if len(data) >= 8:
+    def data_valida(ano, mes, dia):
+        try:
+            date(ano, mes, dia)
+            return True
+        except ValueError:
+            return False
+
+    if len(data) == 8:
+        dia = int(data[0:2])
         mes = int(data[2:4])
-        return mes if 1 <= mes <= 12 else None
+        ano = int(data[4:8])
+        if data_valida(ano, mes, dia):
+            return mes
+        return None
 
     if len(data) == 7:
+        ano = int(data[3:7])
         candidatos = []
 
-        mes_duplo = int(data[1:3])
-        if 1 <= mes_duplo <= 12:
-            candidatos.append(mes_duplo)
+        # Opção 1: DMMYYYY (dia com 1 dígito, mês com 2 dígitos)
+        dia_dmmyyyy = int(data[0:1])
+        mes_dmmyyyy = int(data[1:3])
+        if data_valida(ano, mes_dmmyyyy, dia_dmmyyyy):
+            candidatos.append(("dmmyyyy", mes_dmmyyyy))
 
-        mes_simples = int(data[2:3])
-        if 1 <= mes_simples <= 12:
-            candidatos.append(mes_simples)
+        # Opção 2: DDMYYYY (dia com 2 dígitos, mês com 1 dígito)
+        dia_ddmyyyy = int(data[0:2])
+        mes_ddmyyyy = int(data[2:3])
+        if data_valida(ano, mes_ddmyyyy, dia_ddmyyyy):
+            candidatos.append(("ddmyyyy", mes_ddmyyyy))
 
-        if candidatos:
-            return candidatos[0]
+        if len(candidatos) == 1:
+            return candidatos[0][1]
+
+        if len(candidatos) == 2:
+            meses_candidatos = sorted([candidatos[0][1], candidatos[1][1]])
+
+            # Se houver mês anterior conhecido, usa a ordem cronológica para desempatar.
+            if mes_referencia is not None:
+                meses_na_frente = [m for m in meses_candidatos if m >= mes_referencia]
+                if meses_na_frente:
+                    return meses_na_frente[0]
+                return meses_candidatos[-1]
+
+            return meses_candidatos[0]
 
         return None
 
@@ -94,7 +126,9 @@ def obter_mes(data_acidente):
 
 
 def ler_arquivo():
-    with open("./Acidentes.csv", "r", encoding="utf-8") as arquivo:
+    id_acidente_anterior = None
+    ultimo_mes = None
+    with open("./Acidentes24.csv", "r", encoding="utf-8") as arquivo:
         leitor = csv.reader(arquivo)
         for dados in leitor:
             # Ignore empty rows that would otherwise create a 1-item list.
@@ -113,15 +147,39 @@ def ler_arquivo():
             else:
                 veiculo_arr[int(acidente.tipo_veiculo) - 1] += 1
 
-
-            mes = obter_mes(acidente.data_acidente)
-            if mes is not None:
-                total_mes[mes - 1] += 1
+            if acidente.identificacao_acidente != id_acidente_anterior:   
+                mes = obter_mes(acidente.data_acidente, ultimo_mes)
+                if mes is not None:
+                    total_mes24[mes - 1] += 1
+                    ultimo_mes = mes
+            id_acidente_anterior = acidente.identificacao_acidente
+    id_acidente_anterior = None
+    ultimo_mes = None
+    with open("./Acidentes22.csv", "r", encoding="utf-8") as arquivo:
+        leitor = csv.reader(arquivo)
+        for dados in leitor:
+            if not dados:
+                continue
+            acidente = Acidente(
+                identificacao_acidente=dados[0],
+                cidade=0,
+                tipo_veiculo=0,
+                data_acidente=dados[1]
+            )
+            if acidente.identificacao_acidente != id_acidente_anterior:   
+                mes = obter_mes(acidente.data_acidente, ultimo_mes)
+                if mes is not None:
+                    total_mes22[mes - 1] += 1
+                    ultimo_mes = mes
+            id_acidente_anterior = acidente.identificacao_acidente
+    with open("./Acidentes23.csv", "r", encoding="utf-8") as arquivo:
+        leitor = csv.reader(arquivo)
+        i = 0
+        for dados in leitor:
+            total_mes23[i] = int(dados[0])
+            i += 1
           
-            
-
 def plot_veiculo():
-    ler_arquivo()
     veiculo_arr_stringify = []
     for i, item in enumerate(veiculo_arr):
         if i < 9:
@@ -142,7 +200,6 @@ def plot_veiculo():
     for item in veiculo_arr_sorted:
         vehicle_type.append(item[0])
         number_of_incidents.append((item[1]))
-    print(veiculo_arr_sorted)
     plt.bar(vehicle_type, number_of_incidents)
     plt.xticks(rotation=90)
     plt.xlabel('Tipo de Veículo')
@@ -155,18 +212,12 @@ def plot_veiculo():
     plt.legend()
     plt.show()
 
-
-def plot_mes():
-    ler_arquivo()
-    media = statistics.mean(total_mes)
-    desvio_padrao = statistics.pstdev(total_mes)
-
-    rng = random.Random(42)
-    normal_mes = [max(0, round(rng.gauss(media, desvio_padrao))) for _ in total_mes]
-
+def plot_mes(ano_atual, media_anual, titulo):
+    media = statistics.mean(media_anual)
+    desvio_padrao = statistics.pstdev(media_anual)
     mes_labels = [f'{dict_mes.get(str(i+1), f"Mês {i+1}")}' for i in range(12)]
-    plt.bar(mes_labels, total_mes, label='Total de Acidentes', color='blue')
-    plt.plot(mes_labels, normal_mes, color='orange', marker='o', linewidth=2, label='Distribuição gaussiana simulada')
+    plt.bar(mes_labels, ano_atual, label='Total de Acidentes', color='blue')
+    plt.plot(mes_labels, media_anual, color='orange', marker='o', linewidth=2, label='Média dos anos de 2022 a 2024')
 
     plt.axhline(media, color='black', linestyle='-', linewidth=1, label='Média (μ)')
     plt.axhline(media + (2 * desvio_padrao), color='green', linestyle='--', linewidth=1, label='+2σ')
@@ -176,9 +227,15 @@ def plot_mes():
 
     plt.xlabel('Mês')
     plt.ylabel('Número de Acidentes')
+    plt.title(titulo)
     plt.legend()
     plt.show()
-
-plot_mes()
-
-plot_veiculo()
+def definir_media_mes():
+    for i in range(12):
+        media_mes.append(statistics.mean([total_mes22[i], total_mes23[i], total_mes24[i]]))
+def main():
+    ler_arquivo()
+    definir_media_mes()
+    plot_veiculo()
+    plot_mes(total_mes24, media_mes, "Total de Acidentes por Mês em 2024")
+main()
