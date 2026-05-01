@@ -56,10 +56,12 @@ dict_mes = {
     "12": "dezembro"
 }
 veiculo_arr = [0] * 34
+veiculo_letal = [0] * 34
 media_mes = []
 total_mes22 = [0] * 12
 total_mes23 = [0] * 12
 total_mes24 = [0] * 12
+acidentes = []
 # cidade, tipo_veiculo, dia_da_semana, fase_do_dia, data_acidente
 class Acidente:
     def __init__(self, identificacao_acidente, cidade, tipo_veiculo, data_acidente):
@@ -140,6 +142,7 @@ def ler_arquivo():
                 tipo_veiculo=dados[2],
                 data_acidente=dados[3]
             )
+            acidentes.append(acidente)
             tipo_veiculo = acidente.tipo_veiculo.strip()
             
             if tipo_veiculo == "99" or tipo_veiculo == "0" or tipo_veiculo == "":    
@@ -187,9 +190,8 @@ def plot_veiculo():
         elif i < 33:
             label = dict_tipo_veículo[str(i + 1)]
         else:
-            label = dict_tipo_veículo['99']
-        if item != 0:
-            veiculo_arr_stringify.append((label, item))
+            label = "Desconecido"
+        veiculo_arr_stringify.append((label, item, veiculo_letal[i]))
     media = statistics.mean(veiculo_arr)
     desvio_padrao = statistics.pstdev(veiculo_arr)
     
@@ -200,7 +202,8 @@ def plot_veiculo():
     for item in veiculo_arr_sorted:
         vehicle_type.append(item[0])
         number_of_incidents.append((item[1]))
-    plt.bar(vehicle_type, number_of_incidents)
+    plt.bar(vehicle_type, number_of_incidents, label='Número absoluto de Acidentes')
+    plt.bar(vehicle_type, [item[2] for item in veiculo_arr_sorted], color='red', label='Número de Acidentes Fatais')
     plt.xticks(rotation=90)
     plt.xlabel('Tipo de Veículo')
     plt.ylabel('Número de Acidentes')
@@ -233,8 +236,20 @@ def plot_mes(ano_atual, media_anual, titulo):
 def definir_media_mes():
     for i in range(12):
         media_mes.append(statistics.mean([total_mes22[i], total_mes23[i], total_mes24[i]]))
+def correlacionar_tabelas():
+    with open("./letalidade24.csv", "r", encoding="utf-8") as arquivo:
+        leitor = csv.reader(arquivo)
+        for dados in leitor:
+            if not dados:
+                continue
+            for acidente in acidentes:
+                if acidente.identificacao_acidente == dados[0]:
+                    veiculo_letal[int(acidente.tipo_veiculo) - 1] += 1
+
 def main():
     ler_arquivo()
+    correlacionar_tabelas()
+    correlacionar_tabelas()
     definir_media_mes()
     plot_veiculo()
     plot_mes(total_mes24, media_mes, "Total de Acidentes por Mês em 2024")
