@@ -6,6 +6,9 @@ Os dados utilizados para essa análise foram retirados do Anuário RENAEST 2024 
 	Para plotagem dos gráficos escolhemos o gráfico de barras e o gráfico de linha. Escolhemos esses gráficos por acharmos de fácil entendimento. 
 Da parte de estatística utilizamos, até o momento, conceitos como: média, desvio padrão, normalização e distribuição gaussiana
 
+## Relatorio completo
+<https://docs.google.com/document/d/1QxKC6lv2XvoovqOCdYo-Bj3pXSSr_7VVZWpKd8l3nK8/edit?usp=sharing>
+
 ## Gráfico Mensal
 
 ![Gráfico mensal](grafico%20mensal.png)
